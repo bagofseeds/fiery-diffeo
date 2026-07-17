@@ -34,8 +34,9 @@ Issues = "https://github.com/bagofseeds/fiery-diffeo/issues"
 Repository = "https://github.com/bagofseeds/fiery-diffeo"
 
 [project.optional-dependencies]
-dct = ["scipy>=1.0"]
-cuda = ["cupy"]
+# scipy is only needed for the 2D Helmholtz metric's analytical Green's
+# function; the DCT/DST transforms are provided by fiery-bounds (torch.fft).
+helmholtz = ["scipy>=1.0"]
 jitfields = ["jitfields @ git+https://github.com/balbasty/jitfields"]
 test = [
     "pytest>=7",

@@ -15,16 +15,15 @@ We require this pytorch version so that complex values and the modern
 pip install fiery-diffeo
 ```
 
-To use the DCT/DST boundary modes (which allow using Neumann or Dirichlet
-boundary conditions), `scipy` is further required. It is bundled with
-`fiery-diffeo` under the `[dct]` tag:
+The DCT/DST boundary modes (which allow using Neumann or Dirichlet boundary
+conditions) work out of the box: they are provided by
+[`fiery-bounds`](https://github.com/bagofseeds/fiery-bounds) using
+`torch.fft`, on both CPU and GPU, with no extra dependency.
+
+Only the 2D Helmholtz metric additionally requires `scipy` (for the
+analytical Green's function); it is bundled under the `[helmholtz]` tag:
 ```shell
-pip install "fiery-diffeo[dct]"
-```
-If you are running the GPU version of pytorch *and* wish to use DCT/DST,
-`cupy` is further required. Again, it is bundled under the `[cuda]` tag:
-```shell
-pip install "fiery-diffeo[dct,cuda]"
+pip install "fiery-diffeo[helmholtz]"
 ```
 
 ## Layers

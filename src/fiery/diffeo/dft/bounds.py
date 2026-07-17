@@ -7,8 +7,7 @@ from fiery.diffeo.utils import ensure_list
 from .generic import dtn, dtshift, kerdtn, real
 
 msg_error_dct = """
-DCT/DST require scipy (and, for cuda support, cupy)
-Install torch-diffeo with `pip install "torch-diffeo[dct,cuda]"`
+DCT/DST are provided by `fiery-bounds`, a dependency of `fiery-diffeo`.
 """
 
 

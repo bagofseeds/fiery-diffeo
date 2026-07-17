@@ -3,7 +3,10 @@ Boundary conditions
 ===================
 
 There is no common convention to name boundary conditions.
-Here's the list all possible aliases.
+The mapping between the various naming conventions and the discrete
+transforms that implement them is provided by [`fiery.bounds`][]; this
+module is a thin adapter that adds diffeo's short aliases and the
+flow-specific "sliding" boundary condition.
 
 =========   ===========   =======================   =======================
 Fourier     SciPy         Metric                    Description
@@ -15,46 +18,40 @@ dst2                      dirichlet                -b -a | a b c d | -d -c
 dst1                                               -a  0 | a b c d |  0 -d
 
 We further define a flow-specific "sliding" boundary condition, which
-uses a combination of dct2 and dst2:
-=============================   =============================
-X component                     Y component
-=============================   =============================
- -f -e   -e -f -g -h   -h -g     -f -e    e  f  g  h   -h -g
- -b -a   -a -b -c -d   -d -c     -b -a    a  b  c  d   -d -c
------------------------------   -----------------------------
-  b  a |  a  b  c  d |  d  c     -b -a |  a  b  c  d | -d -c
-  f  e |  e  f  g  h |  h  g     -f -e |  e  f  g  h | -h -g
-  j  i |  i  j  k  l |  l  k     -j -i |  i  j  k  l | -l -k
-  l  m |  m  n  o  p |  p  o     -n -m |  m  n  o  p | -p -o
------------------------------   -----------------------------
- -n -m   -m -n -o -p   -p -o     -n -m    m  n  o  p   -p -o
- -j -i   -i -j -k -l   -l -k     -j -i    i  j  k  l   -l -k
+uses a combination of dct2 and dst2 (dst2 along the component's own axis,
+dct2 along the others).
 """
+from fiery.bounds import to_fourier as _to_fourier
 
-bound2dft = {
-    # circulant
-    'circulant': 'dft',
-    'circ': 'dft',
-    'c': 'dft',
-    # neumann
-    'neumann': 'dct2',
-    'n': 'dct2',
-    # dirichlet
-    'dirichlet': 'dst2',
-    'd': 'dst2',
-    # scipy
-    'reflect': 'dct2',
-    'mirror': 'dct1',
-    'wrap': 'dft',
+# diffeo-specific short aliases that fiery.bounds does not recognise
+_short_aliases = {
+    'circ': 'circulant',
+    'c': 'circulant',
+    'n': 'neumann',
+    'd': 'dirichlet',
 }
 
-dft2bound = {
-    'dft': 'circulant',
-    'dct': 'neumann',
-    'dct2': 'neumann',
-    'dst': 'dirichlet',
-    'dst2': 'dirichlet',
-}
+
+class _Bound2DFT:
+    """Dict-like mapping from any bound name to its Fourier transform.
+
+    The conversion itself is delegated to
+    [`fiery.bounds.to_fourier`][fiery.bounds.types.to_fourier]; only the
+    short aliases are handled here. Names that fiery.bounds does not know
+    (e.g. `'sliding'`, `'zero'`, or a name already in Fourier convention
+    that raises) fall back to the provided default -- reproducing the
+    behaviour of the former hard-coded ``dict.get`` lookup.
+    """
+
+    def get(self, name, default=None):
+        name = _short_aliases.get(name, name)
+        try:
+            return _to_fourier(name)
+        except (ValueError, KeyError):
+            return default
+
+
+bound2dft = _Bound2DFT()
 
 
 def has_sliding(bound):
