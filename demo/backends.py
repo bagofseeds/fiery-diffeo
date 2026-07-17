@@ -1,12 +1,17 @@
-from diffeo.tests import phantoms
-from diffeo.backends import (
-    torch as torch_backend,
-    interpol as interpol_backend,
-    jitfields as jitfields_backend,
-)
-import torch
 import interpol
 import matplotlib.pyplot as plt
+import torch
+
+from fiery.diffeo.backends import (
+    interpol as interpol_backend,
+)
+from fiery.diffeo.backends import (
+    jitfields as jitfields_backend,
+)
+from fiery.diffeo.backends import (
+    torch as torch_backend,
+)
+from fiery.diffeo.tests import phantoms
 
 device = 'cuda'
 shape = [192, 192]
@@ -24,10 +29,7 @@ plt.show()
 
 warp = torch.randn([8, 8, 2], device=device).mul_(8)
 warp = interpol.resize(
-    warp.movedim(-1, 0),
-    shape=shape,
-    interpolation=3,
-    prefilter=False
+    warp.movedim(-1, 0), shape=shape, interpolation=3, prefilter=False
 ).movedim(0, -1)
 
 warpc_itrpl = interpol_backend.pull(circ[:, :, None], warp)[:, :, 0]
@@ -66,12 +68,14 @@ gradc_itrpl = interpol_backend.grad(circ[:, :, None], warp)[:, :, 0, :]
 gradc_torch = torch_backend.grad(circ[None, :, :, None], warp)[0, :, :, 0, :]
 gradc_jit = jitfields_backend.grad(circ[None, :, :, None], warp)[0, :, :, 0, :]
 
+
 def to_rgb(x, vmin=-2, vmax=2):
     tmp = x.new_zeros([*shape, 3])
     tmp[..., :2] = x
-    tmp.add_(vmin).div_(vmax-vmin).mul_(255).round_()
+    tmp.add_(vmin).div_(vmax - vmin).mul_(255).round_()
     tmp = tmp.to(torch.uint8)
     return tmp
+
 
 plt.figure()
 plt.subplot(1, 3, 1)

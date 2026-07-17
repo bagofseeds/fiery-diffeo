@@ -1,32 +1,30 @@
-# torch-diffeo
+# fiery-diffeo
 Scaling-and-squaring and Geodesic Shooting layers in PyTorch
+
+`fiery-diffeo` is a [`fiery`](https://github.com/bagofseeds/fiery) bag: it
+installs on its own and imports as `fiery.diffeo`.
 
 ## Getting started
 
-This package requires `pytorch >= 1.8` and 
-[`torch-interpol`](https://github.com/balbasty/torch-interpol). 
-We require this version so that pytorch supports complex values and the
-modern `torch.fft` module. To install with pip, simply do:
+This package requires `pytorch >= 1.8`,
+[`fiery-interpol`](https://github.com/bagofseeds/fiery-interpol) and
+[`fiery-bounds`](https://github.com/bagofseeds/fiery-bounds).
+We require this pytorch version so that complex values and the modern
+`torch.fft` module are supported. To install with pip, simply do:
 ```shell
-pip install "torch-diffeo @ git+https://github.com/balbasty/torch-diffeo"
+pip install fiery-diffeo
 ```
 
 To use the DCT/DST boundary modes (which allow using Neumann or Dirichlet
-boundary conditions), `scipy` is further required. It is bundled with 
-`torch-diffeo` under the `[dct]` tag:
+boundary conditions), `scipy` is further required. It is bundled with
+`fiery-diffeo` under the `[dct]` tag:
 ```shell
-pip install "torch-diffeo[dct] @ git+https://github.com/balbasty/torch-diffeo"
+pip install "fiery-diffeo[dct]"
 ```
-If you are running the GPU version of pytorch *and* wish to use DCT/DST, 
+If you are running the GPU version of pytorch *and* wish to use DCT/DST,
 `cupy` is further required. Again, it is bundled under the `[cuda]` tag:
 ```shell
-pip install "torch-diffeo[dct,cuda] @ git+https://github.com/balbasty/torch-diffeo"
-```
-However, it is in general advised to install both pytorch and cupy using 
-`conda`, thereby minimizing conflicts:
-```shell
-conda install -c pytorch -c conda-forge pytorch cupy scipy cudatoolkit=10.2 
-pip install "torch-diffeo @ git+https://github.com/balbasty/torch-diffeo"
+pip install "fiery-diffeo[dct,cuda]"
 ```
 
 ## Layers
@@ -335,29 +333,29 @@ operations:
   approximate implementation of splatting. It should be fast, but also
   quite inaccurate.
 - `interpol`: This backend uses the package
-  [`torch-interpol`](https://github.com/balbasty/torch-interpol), which
+  [`fiery-interpol`](https://github.com/bagofseeds/fiery-interpol), which
   implements all the necessary operators using TorchScript. It is not the
   fastest but all operators and boundary conditions should be consistent.
   **This is the default backend.**
 - `jitfields`: This backend uses the package
   [`jitfields`](https://github.com/balbasty/jitfields), which
-  implements the same operators as `torch-interpol`, but in pure C++/CUDA.
+  implements the same operators as `fiery-interpol`, but in pure C++/CUDA.
   It does require additional dependencies (`cupy` and `cppyy`), though.
-  Therefore, `jitfields` is not a mandatory dependency of `torch-diffeo`
-  and must be manually intstalled by the user.
+  Therefore, `jitfields` is not a mandatory dependency of `fiery-diffeo`
+  and must be manually installed by the user.
 
 All our layers and functions take a `backend` argument:
 ```python
-from diffeo.layers import Exp
-from diffeo.backends import jitfields
+from fiery.diffeo.layers import Exp
+from fiery.diffeo.backends import jitfields
 
 layer = Exp(backend=jitfields)
 ```
 Alternatively, we provide a context manager that sets the backend for
 an entire block:
 ```python
-from diffeo.layers import Exp, BCH
-from diffeo.backends import backend, jitfields
+from fiery.diffeo.layers import Exp, BCH
+from fiery.diffeo.backends import backend, jitfields
 
 with backend(jitfields):
     layer1 = Exp()

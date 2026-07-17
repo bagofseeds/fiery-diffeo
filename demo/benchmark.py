@@ -1,13 +1,19 @@
-import torch
+import gc
 from time import time
-from diffeo.layers import Exp
-from diffeo.backends import (
-    torch as torch_backend,
+
+import psutil
+import torch
+
+from fiery.diffeo.backends import (
     interpol as interpol_backend,
+)
+from fiery.diffeo.backends import (
     jitfields as jitfields_backend,
 )
-import psutil
-import gc
+from fiery.diffeo.backends import (
+    torch as torch_backend,
+)
+from fiery.diffeo.layers import Exp
 
 
 def froward_backward(v, anagrad=True, backend=jitfields_backend):
@@ -15,11 +21,13 @@ def froward_backward(v, anagrad=True, backend=jitfields_backend):
     if v.is_cuda:
         mema0 = torch.cuda.memory_allocated()
         memp0 = torch.cuda.max_memory_allocated()
-        print(f'init     | {0:7.3g} s | '
-              f'{mema0/1024**2:6.2f} MB | max = {memp0/1024**2:6.2f} MB ')
+        print(
+            f'init     | {0:7.3g} s | '
+            f'{mema0 / 1024**2:6.2f} MB | max = {memp0 / 1024**2:6.2f} MB '
+        )
     else:
         mem0 = psutil.Process().memory_info().rss
-        print(f'init     | {0:7.3g} s | {mem0/1024**2:6.2f} MB')
+        print(f'init     | {0:7.3g} s | {mem0 / 1024**2:6.2f} MB')
     # forward
     torch.cuda.reset_max_memory_allocated()
     tic = time()
@@ -33,11 +41,13 @@ def froward_backward(v, anagrad=True, backend=jitfields_backend):
     if v.is_cuda:
         mema1 = torch.cuda.memory_allocated()
         memp1 = torch.cuda.max_memory_allocated()
-        print(f'forward  | {tac:7.3g} s | '
-              f'{mema1/1024**2:6.2f} MB | max = {memp1/1024**2:6.2f} MB ')
+        print(
+            f'forward  | {tac:7.3g} s | '
+            f'{mema1 / 1024**2:6.2f} MB | max = {memp1 / 1024**2:6.2f} MB '
+        )
     else:
         mem1 = psutil.Process().memory_info().rss
-        print(f'forward  | {tac:7.3g} s | {mem1/1024**2:6.2f} MB')
+        print(f'forward  | {tac:7.3g} s | {mem1 / 1024**2:6.2f} MB')
 
     # backward
     torch.cuda.reset_max_memory_allocated()
@@ -49,11 +59,13 @@ def froward_backward(v, anagrad=True, backend=jitfields_backend):
     if v.is_cuda:
         mema2 = torch.cuda.memory_allocated()
         memp2 = torch.cuda.max_memory_allocated()
-        print(f'backward | {toc:7.3g} s | '
-              f'{mema2/1024**2:6.2f} MB | max = {memp2/1024**2:6.2f} MB ')
+        print(
+            f'backward | {toc:7.3g} s | '
+            f'{mema2 / 1024**2:6.2f} MB | max = {memp2 / 1024**2:6.2f} MB '
+        )
     else:
         mem2 = psutil.Process().memory_info().rss
-        print(f'backward | {toc:7.3g} s | {mem2/1024**2:6.2f} MB')
+        print(f'backward | {toc:7.3g} s | {mem2 / 1024**2:6.2f} MB')
     return phi, v.grad
 
 

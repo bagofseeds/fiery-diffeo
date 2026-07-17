@@ -1,8 +1,9 @@
-import torch
-from diffeo.layers import Shoot, Pull
-from diffeo.metrics import Mixture
-from diffeo.tests.phantoms import circle, letterc
 import matplotlib.pyplot as plt
+import torch
+
+from fiery.diffeo.layers import Pull, Shoot
+from fiery.diffeo.metrics import Mixture
+from fiery.diffeo.tests.phantoms import circle, letterc
 
 
 def to_rgb(x):
@@ -10,14 +11,22 @@ def to_rgb(x):
     vmin = x.min()
     vmax = x.max()
     tmp = x.new_zeros([*x.shape[:-1], 3])
-    tmp[..., :x.shape[-1]] = x
-    tmp.add_(vmin).div_(vmax-vmin).mul_(255).round_()
+    tmp[..., : x.shape[-1]] = x
+    tmp.add_(vmin).div_(vmax - vmin).mul_(255).round_()
     tmp = tmp.to(torch.uint8)
     return tmp
 
 
-def register(fix=None, mov=None, metric=None, hilbert=True,
-             lr=1e-2, nbiter=256, bound='circulant', device='cuda'):
+def register(
+    fix=None,
+    mov=None,
+    metric=None,
+    hilbert=True,
+    lr=1e-2,
+    nbiter=256,
+    bound='circulant',
+    device='cuda',
+):
     """Register two images by minimizing the squared differences.
 
     .. The deformation is encoded by a geodesic.
@@ -71,22 +80,23 @@ def register(fix=None, mov=None, metric=None, hilbert=True,
         return v.flatten().dot(m.flatten())
 
     for n in range(nbiter):
-
         vel.grad = None
         phi = exp(vel)
         wrp = pull(mov, phi)
-        loss = (wrp-fix).square().sum()
+        loss = (wrp - fix).square().sum()
         loss += penalty(vel)
         loss.backward()
         with torch.no_grad():
             if hilbert:
-                vel.grad = metric.inverse(vel.grad.movedim(1, -1)).movedim(-1, 1)
+                vel.grad = metric.inverse(vel.grad.movedim(1, -1)).movedim(
+                    -1, 1
+                )
             ok = False
             vel.sub_(vel.grad, alpha=lr)
             for nls in range(12):
                 phi = exp(vel)
                 wrp = pull(mov, phi)
-                new_loss = (wrp-fix).square().sum()
+                new_loss = (wrp - fix).square().sum()
                 new_loss += penalty(vel)
                 if new_loss < loss:
                     ok = True
@@ -98,9 +108,13 @@ def register(fix=None, mov=None, metric=None, hilbert=True,
                 print('converged?')
                 break
 
-        print(f'{n:03d} | {loss.item()/mov.ndim:6.3g} | lr = {lr:6.3g}', end='\r')
+        print(
+            f'{n:03d} | {loss.item() / mov.ndim:6.3g} | lr = {lr:6.3g}',
+            end='\r',
+        )
 
-        if n % 8: continue
+        if n % 8:
+            continue
         print('')
         plt.subplot(2, 2, 1)
         plt.imshow(fix.squeeze().cpu(), vmin=0, vmax=1)
