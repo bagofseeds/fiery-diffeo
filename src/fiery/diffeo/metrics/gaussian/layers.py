@@ -9,7 +9,8 @@ from fiery.diffeo.utils import cartesian_grid, make_vector
 
 class Gaussian(Metric):
     """
-    Positive semi-definite metric whose Greens function is a Gaussian filter.
+    Positive semi-definite metric whose Green's function is a Gaussian
+    filter.
     """
 
     def __init__(
@@ -26,19 +27,24 @@ class Gaussian(Metric):
         ----------
         fwhm : float
             Full-width at half-maximum of the Gaussian filter, in mm
-            (optionally: learnable)
+            (optionally: learnable).
         factor : float
-            Global regularization factor (optionally: learnable)
-        voxel_size : list[float]
-            Voxel size
+            Global regularization factor (optionally: learnable).
+        voxel_size : [list of] float
+            Voxel size.
         bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
-            Boundary conditions
-        learnable : bool or {'factor', 'fwhm', 'fwhm+factor}
-            Make `factor` and/or 'fwhm' a learnable parameter.
-            `True` is equivalent to `factor`.
+            Boundary conditions.
+        learnable : bool or {'factor', 'fwhm', 'fwhm+factor'}
+            Make `factor` and/or `fwhm` a learnable parameter.
+            `True` is equivalent to `'factor'`.
         cache : bool or int
-            Cache up to `n` kernels
-            This cannot be used when `learnable='fwhm'`
+            Cache up to `n` kernels.
+            This cannot be used together with a learnable `fwhm`.
+
+        Raises
+        ------
+        ValueError
+            If `cache` is used together with a learnable `fwhm`.
         """
         learnable_fwhm = isinstance(learnable, str) and 'fwhm' in learnable
         learnable_factor = isinstance(learnable, str) and 'factor' in learnable

@@ -8,6 +8,23 @@ from fiery.diffeo.dft import FrequencyTransform
 
 
 class Metric(nn.Module):
+    """
+    Base class for Riemannian metrics on velocity fields.
+
+    A metric is defined by a positive semi-definite linear operator `L`,
+    which maps a velocity field `v` to its momentum field `m = Lv`. The
+    inner product `(v, Lv)` is the squared norm of `v` under the metric,
+    and is the quantity that gets penalised when the metric is used as a
+    regulariser. The inverse operator `K = inv(L)`, a convolution with
+    the Green's function of `L`, maps momenta back to velocities.
+
+    Subclasses only need to implement the four kernel builders
+    (`metric_kernel`, `metric_fourier`, `greens_kernel`,
+    `greens_fourier`); the generic `forward`, `inverse`, `whiten`,
+    `color` and `logdet` methods are derived from them by (inverse)
+    Fourier transform.
+    """
+
     def __init__(
         self,
         factor=1,
@@ -20,15 +37,15 @@ class Metric(nn.Module):
         Parameters
         ----------
         factor : float
-            Regularization factor
-        voxel_size : list[float]
-            Voxel size
-        bound : {'circulant', 'neumann', 'dirichlet', 'sliding'}
-            Boundary conditions
+            Regularization factor.
+        voxel_size : [list of] float
+            Voxel size.
+        bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
+            Boundary conditions.
         learnable : bool
-            Make `factor` a learnable parameter
+            Make `factor` a learnable parameter.
         cache : bool or int
-            Cache up to `n` kernels
+            Cache up to `n` kernels.
         """
         super().__init__()
         self.voxel_size = voxel_size
@@ -56,21 +73,21 @@ class Metric(nn.Module):
             self.cache = cache
 
     def forward(self, x, factor=True):
-        """Apply the forward linear operator: v -> Lv
+        """Apply the forward linear operator: `v -> Lv`.
 
-        Converts velocity fields to momentum fields.
+        Converts a velocity field into a momentum field.
 
         Parameters
         ----------
-        v : (..., *spatial, D) tensor
-            Input velocity field
-        factor : bool
-            Whether to incorporate the global factor
+        x : (..., *spatial, D) tensor
+            Input velocity field.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
 
         Returns
         -------
         m : (..., *spatial, D) tensor
-            Output momentum field
+            Output momentum field.
 
         """
         ndim = x.shape[-1]
@@ -106,21 +123,22 @@ class Metric(nn.Module):
         return x
 
     def inverse(self, x, factor=True):
-        """Apply the inverse (Greens) linear operator: m -> Km
+        """Apply the inverse (Green's) linear operator: `m -> Km`.
 
-        Converts momentum fields to velocity fields.
+        Converts a momentum field back into a velocity field, where
+        `K = inv(L)`.
 
         Parameters
         ----------
-        m : (..., *spatial, D) tensor
-            Input momentum field
-        factor : bool
-            Whether to incorporate the global factor
+        x : (..., *spatial, D) tensor
+            Input momentum field.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
 
         Returns
         -------
         v : (..., *spatial, D) tensor
-            Output velocity field
+            Output velocity field.
         """
         ndim = x.shape[-1]
         ft = FrequencyTransform(ndim, self.bound)
@@ -196,21 +214,22 @@ class Metric(nn.Module):
         return x
 
     def whiten(self, x, factor=True):
-        """Apply the square root linear operator: v -> sqrt(L) v
+        """Apply the square root of the forward operator: `v -> sqrt(L) v`.
 
-        Whiten velocity fields.
+        Whitens a velocity field: under the Gaussian prior whose
+        precision matrix is `L`, the output has an identity covariance.
 
         Parameters
         ----------
-        v : (..., *spatial, D) tensor
-            Input velocity field
-        factor : bool
-            Whether to incorporate the global factor
+        x : (..., *spatial, D) tensor
+            Input velocity field.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
 
         Returns
         -------
-        x : (..., *spatial, D) tensor
-            Output whitened field
+        w : (..., *spatial, D) tensor
+            Output white field.
         """
         x = self._conv_sqrt(self.metric_fourier, x)
 
@@ -221,21 +240,23 @@ class Metric(nn.Module):
         return x
 
     def color(self, x, factor=True):
-        """Apply the inverse square root linear operator: x -> sqrt(K) x
+        """Apply the square root of the inverse operator: `w -> sqrt(K) w`.
 
-        Color white fields.
+        Colors a white field: the output is a velocity field distributed
+        according to the Gaussian prior whose precision matrix is `L`.
+        This is the inverse of `whiten`.
 
         Parameters
         ----------
         x : (..., *spatial, D) tensor
-            Input white field
-        factor : bool
-            Whether to incorporate the global factor
+            Input white field.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
 
         Returns
         -------
         v : (..., *spatial, D) tensor
-            Output velocity field
+            Output velocity field.
         """
         x = self._conv_sqrt(self.greens_fourier, x)
 
@@ -246,8 +267,20 @@ class Metric(nn.Module):
         return x
 
     def logdet(self, x, factor=True):
-        """Return the log-determinant of L (times batch size)
-        v : (..., *spatial, D) tensor
+        """Return the log-determinant of `L` (times the batch size).
+
+        Parameters
+        ----------
+        x : (..., *spatial, D) tensor
+            A velocity field. Only its shape, dtype and device are used;
+            its values are not.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
+
+        Returns
+        -------
+        ld : scalar tensor
+            Log-determinant, scaled by the batch size.
         """
         ndim = x.shape[-1]
         batch = x.shape[: -ndim - 1]

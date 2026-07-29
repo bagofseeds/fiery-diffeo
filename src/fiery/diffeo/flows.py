@@ -1,3 +1,25 @@
+"""Utilities for displacement and transformation fields.
+
+Two closely related objects appear throughout this package:
+
+- a **displacement field** stores, at each voxel, the offset (in voxels)
+  from that voxel to its target, so the identity displacement is zero;
+- a **transformation field** stores the target coordinate itself, so the
+  identity transformation is the sampling grid.
+
+They differ by the identity grid, and `add_identity` / `sub_identity`
+convert between them. Most functions here take displacement fields by
+default and accept transformation fields through `has_identity=True`.
+
+A **velocity field** has the same layout but a different meaning: it is
+a tangent vector, integrated over unit time by `fiery.diffeo.svf.exp`
+(stationary) or `fiery.diffeo.shoot.shoot` (geodesic) to yield a
+displacement field.
+
+All fields are `(..., *spatial, D) tensor`, i.e. channel-last, where `D`
+is the number of spatial dimensions.
+"""
+
 import torch
 
 from fiery.diffeo.backends import interpol as interpol_backend
@@ -8,7 +30,7 @@ from fiery.diffeo.utils import cartesian_grid, ensure_list
 
 
 def add_identity_(flow):
-    """Adds the identity grid to a displacement field, inplace.
+    """Add the identity grid to a displacement field, in place.
 
     Parameters
     ----------
@@ -32,7 +54,7 @@ def add_identity_(flow):
 
 
 def sub_identity_(flow):
-    """Subtracts the identity grid from a transformation field, inplace.
+    """Subtract the identity grid from a transformation field, in place.
 
     Parameters
     ----------
@@ -56,7 +78,7 @@ def sub_identity_(flow):
 
 
 def add_identity(flow):
-    """Adds the identity grid to a displacement field.
+    """Add the identity grid to a displacement field.
 
     Parameters
     ----------
@@ -73,7 +95,7 @@ def add_identity(flow):
 
 
 def sub_identity(flow):
-    """Subtracts the identity grid from a transformation field.
+    """Subtract the identity grid from a transformation field.
 
     Parameters
     ----------
@@ -90,12 +112,15 @@ def sub_identity(flow):
 
 
 def identity(shape, **backend):
-    """Returns an identity transformation field.
+    """Return an identity transformation field.
 
     Parameters
     ----------
     shape : (dim,) sequence of int
-        Spatial dimension of the field.
+        Spatial shape of the field.
+    **backend : dict
+        Keyword arguments passed to `torch.arange`, typically `dtype`
+        and `device`.
 
     Returns
     -------
@@ -116,10 +141,14 @@ def affine_field(affine, shape, add_identity=False):
         Affine matrix
     shape : (D,) list[int]
         Lattice size
+    add_identity : bool, default=False
+        If True, return a transformation field (absolute coordinates).
+        Otherwise, return a displacement field.
 
     Returns
     -------
-    flow : (..., *shape, D) tensor, Affine flow
+    flow : (..., *shape, D) tensor
+        Affine flow
 
     """
     ndim = len(shape)
@@ -163,13 +192,13 @@ def jacobian(
         Whether the input is a transformation (True) or displacement
         (False) field.
     add_identity : bool, default=`has_identity`
-        Adds the identity to the Jacobian of the displacement,
-        making it the jacobian of the transformation.
+        Add the identity to the Jacobian of the displacement, making it
+        the Jacobian of the transformation.
 
     Returns
     -------
     jac : (..., *spatial, dim, dim) tensor
-        Jacobian. In each matrix: jac[i, j] = d psi[i] / d xj
+        Jacobian. In each matrix: `jac[i, j] = d psi[i] / d x[j]`
 
     """
     ndim = flow.shape[-1]
@@ -221,9 +250,9 @@ def jacdet(
     has_identity : bool, default=False
         Whether the input is a transformation (True) or displacement
         (False) field.
-    add_identity : bool, default=`has_identity`
-        Adds the identity to the Jacobian of the displacement,
-        making it the jacobian of the transformation.
+    add_identity : bool, default=True
+        Add the identity to the Jacobian of the displacement, making it
+        the Jacobian of the transformation.
 
     Returns
     -------
@@ -248,19 +277,26 @@ def compose(
     has_identity=False,
     backend=interpol_backend,
 ):
-    """Compute flow_left o flow_right
+    """Compute the composition `flow_left o flow_right`
 
     Parameters
     ----------
     flow_left : (..., *shape, D) tensor
+        Left-hand side field.
     flow_right : (..., *shape, D) tensor
+        Right-hand side field.
     bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
+        Boundary conditions.
     has_identity : bool, default=False
+        Whether the inputs are transformation (True) or displacement
+        (False) fields.
     backend : module
+        Backend used to resample `flow_left`.
 
     Returns
     -------
     flow : (..., *shape, D) tensor
+        Composed field, in the same convention as the inputs.
 
     """
     if has_identity:
@@ -296,8 +332,10 @@ def compose_jacobian(
     bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
         Boundary condition
     has_identity : bool, default=False
-        Whether the leht-hand side is a transformation (True) or
+        Whether the left-hand side is a transformation (True) or
         displacement (False) field.
+    backend : module
+        Backend used to resample the left-hand side.
 
     Returns
     -------
@@ -333,19 +371,30 @@ def bracket(
     has_identity=False,
     backend=interpol_backend,
 ):
-    """Compute the Lie bracket of two SVFs
+    """Compute the Lie bracket of two stationary velocity fields
+
+    The Lie bracket `[u, w]` is the leading correction term of the BCH
+    formula, which is why `exp(u) o exp(w)` is not `exp(u + w)` in
+    general. It is approximated here by `u o w - w o u`, using the
+    composition of displacement fields.
 
     Parameters
     ----------
     vel_left : (..., *shape, D) tensor
+        Left-hand side velocity field.
     vel_right : (..., *shape, D) tensor
+        Right-hand side velocity field.
     bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
+        Boundary conditions.
     has_identity : bool, default=False
+        Whether the inputs include the identity grid.
     backend : module
+        Backend used to resample the velocity fields.
 
     Returns
     -------
     bkt : (..., *shape, D) tensor
+        Lie bracket of the two velocity fields.
 
     """
     return compose(

@@ -21,7 +21,7 @@ def push(image, flow, shape=None, bound='dct2', has_identity=False):
     bound : {'dft', 'dct[1|2|3|4]', 'dst[1|2|3|4]'}, default='dct2'
         Boundary conditions.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
@@ -69,13 +69,13 @@ def count(flow, shape=None, bound='dct2', has_identity=False):
     bound : {'dft', 'dct[1|2|3|4]', 'dst[1|2|3|4]'}, default='dct2'
         Boundary conditions.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
     -------
-    pushed : (B, *shape_out, 1) tensor
-        Pushed image
+    count : (B, *shape_out, 1) tensor
+        Count image
 
     """
     if not has_identity:

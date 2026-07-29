@@ -6,8 +6,8 @@ from .pull import pull
 def push(image, flow, shape=None, bound='dct2', has_identity=False):
     r"""Splat an image according to a (voxel) displacement field.
 
-    /!\ The torch version of `push` uses a small deformation approximation
-    /!\ It also does not support the `shape` keyword`
+    /!\ The torch version of `push` uses a small-deformation
+    /!\ approximation. It also ignores the `shape` argument.
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ def push(image, flow, shape=None, bound='dct2', has_identity=False):
         Boundary conditions. PyTorch does not really support them,
         so "reflection" (which is equivalent to "dct2") is always used.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
@@ -46,8 +46,8 @@ def push(image, flow, shape=None, bound='dct2', has_identity=False):
 def count(flow, shape=None, bound='dct2', has_identity=False):
     r"""Splat an image of ones according to a (voxel) displacement field.
 
-    /!\ The torch version of `push` uses a small deformation approximation
-    /!\ It also does not support the `shape` keyword`
+    /!\ The torch version of `count` uses a small-deformation
+    /!\ approximation. It also ignores the `shape` argument.
 
     Parameters
     ----------
@@ -59,13 +59,13 @@ def count(flow, shape=None, bound='dct2', has_identity=False):
         Boundary conditions. PyTorch does not really support them,
         so "reflection" (which is equivalent to "dct2") is always used.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
     -------
-    pushed : (B, *shape_out, 1) tensor
-        Pushed image
+    count : (B, *shape_out, 1) tensor
+        Count image
 
     """
     if not has_identity:

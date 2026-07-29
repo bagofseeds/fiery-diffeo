@@ -1,4 +1,9 @@
-"""Integrate stationary velocity fields."""
+"""Integrate stationary velocity fields (SVFs).
+
+A stationary velocity field is a member of the Lie algebra of the group
+of diffeomorphisms: it is exponentiated to a displacement field by
+`exp`, and two of them are composed in the algebra by `bch`.
+"""
 
 __all__ = ['exp', 'bch', 'exp_forward', 'exp_backward']
 import torch
@@ -26,11 +31,14 @@ def exp(
         Use analytical gradients rather than autodiff gradients in
         the backward pass. Should be more memory efficient and (maybe)
         faster.
+    backend : module
+        Backend used to implement resampling.
+        Must be one of the modules under `fiery.diffeo.backends`.
 
     Returns
     -------
-    grid : ([batch], *spatial, dim) tensor
-        Exponentiated displacement
+    flow : ([batch], *spatial, dim) tensor
+        Exponentiated displacement field.
 
     """
     exp_fn = _Exp.apply if anagrad else exp_forward
@@ -59,21 +67,39 @@ def expjac_forward(vel, steps=8, bound='circulant', backend=default_backend):
 def bch(
     vel_left, vel_right, order=2, bound='circulant', backend=default_backend
 ):
-    """Find v such that exp(v) = exp(u) o exp(w) using the
-    (truncated) Baker–Campbell–Hausdorff formula.
+    """Compose two stationary velocity fields with the BCH formula.
 
-    https://en.wikipedia.org/wiki/BCH_formula
+    Finds the velocity field `v` such that
+    `exp(v) = exp(vel_left) o exp(vel_right)`, using the
+    Baker-Campbell-Hausdorff series truncated at `order`. The series is
+    built from nested Lie brackets of the two inputs, so a higher order
+    is more accurate but costs more brackets.
+
+    See: <https://en.wikipedia.org/wiki/BCH_formula>
 
     Parameters
     ----------
     vel_left : (B, *shape, D) tensor
+        Left-hand side velocity field.
     vel_right : (B, *shape, D) tensor
-    order : 1..4, default=2
-        Truncation order.
+        Right-hand side velocity field.
+    order : {1, 2, 3, 4}, default=2
+        Truncation order of the BCH series.
+    bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
+        Boundary conditions.
+    backend : module
+        Backend used to implement resampling.
+        Must be one of the modules under `fiery.diffeo.backends`.
 
     Returns
     -------
     vel : (B, *shape, D) tensor
+        Composed velocity field.
+
+    Raises
+    ------
+    ValueError
+        If `order` is greater than 4.
 
     """
     brkt = lambda a, b: bracket(a, b, bound=bound, backend=backend)
@@ -105,48 +131,52 @@ def exp_backward(
 ):
     """Backward pass of SVF exponentiation.
 
-    This should be much more memory-efficient than the autograd pass
-    as we don't have to store intermediate grids.
+    This should be much more memory-efficient than the autograd pass,
+    as we do not have to store the intermediate grids.
 
-    I am using DARTEL's derivatives (from the code, not the paper).
-    From what I get, it corresponds to pushing forward the gradient
-    (computed in observation space) recursively while squaring the
-    (inverse) transform.
-    Remember that the push forward of g by phi is
-                    |iphi| iphi' * g(iphi)
-    where iphi is the inverse of phi. We could also have implemented
-    this operation as: inverse(phi)' * push(g, phi), since
-    push(g, phi) \approx |iphi| g(iphi). It has the advantage of using
-    push rather than pull, which might preserve better positive-definiteness
-    of the Hessian, but requires the inversion of (potentially ill-behaved)
-    Jacobian matrices.
+    The derivatives are DARTEL's (taken from the code, not the paper).
+    They amount to pushing the gradient (computed in observation space)
+    forward, recursively, while squaring the (inverse) transform.
+    The pushforward of `g` by `phi` is
 
-    Note that gradients must first be rotated using the Jacobian of
-    the exponentiated transform so that the denominator refers to the
-    initial velocity (we want dL/dV0, not dL/dPsi).
-    THIS IS NOT DONE INSIDE THIS FUNCTION YET (see _dartel).
+        |iphi| iphi' * g(iphi)
+
+    where `iphi` is the inverse of `phi`. This could also have been
+    implemented as `inverse(phi)' * push(g, phi)`, since
+    `push(g, phi) ~= |iphi| g(iphi)`. That form has the advantage of
+    using push rather than pull, which may better preserve the
+    positive-definiteness of the Hessian, but it requires inverting
+    (potentially ill-behaved) Jacobian matrices.
+
+    Note that gradients must first be rotated by the Jacobian of the
+    exponentiated transform, so that the denominator refers to the
+    initial velocity (we want `dL/dV0`, not `dL/dPsi`). Pass
+    `rotate_grad=True` to do so.
 
     Parameters
     ----------
     vel : (..., *spatial, dim) tensor
-        Velocity
+        Stationary velocity field.
     grad : (..., *spatial, dim) tensor
-        Gradient with respect to the output grid
+        Gradient with respect to the output grid.
     hess : (..., *spatial, dim*(dim+1)//2) tensor, optional
-        Symmetric hessian with respect to the output grid.
+        Symmetric Hessian with respect to the output grid.
     steps : int, default=8
-        Number of scaling and squaring steps
+        Number of scaling and squaring steps.
     bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
-        Boundary condition
+        Boundary conditions.
     rotate_grad : bool, default=False
-        If True, rotate the gradients using the Jacobian of exp(vel).
+        If True, rotate the gradients using the Jacobian of `exp(vel)`.
+    backend : module
+        Backend used to implement resampling.
+        Must be one of the modules under `fiery.diffeo.backends`.
 
     Returns
     -------
     grad : (..., *spatial, dim) tensor
-        Gradient with respect to the SVF
+        Gradient with respect to the SVF.
     hess : (..., *spatial, dim*(dim+1)//2) tensor, optional
-        Approximate (block diagonal) Hessian with respect to the SVF
+        Approximate (block diagonal) Hessian with respect to the SVF.
 
     """
 

@@ -19,7 +19,7 @@ def grad(image, flow, bound='dct2', has_identity=False):
         Boundary conditions. PyTorch does not really support them,
         so "reflection" (which is equivalent to "dct2") is always used.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns

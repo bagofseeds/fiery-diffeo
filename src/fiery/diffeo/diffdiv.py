@@ -22,6 +22,8 @@ def diff1d(x, order=1, dim=-1, voxel_size=1, side='c', bound='dct2', out=None):
         * 'b': backward finite differences
     bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'replicate', 'zero'}
         Boundary condition.
+    out : tensor, optional
+        Output placeholder
 
     Returns
     -------
@@ -253,7 +255,7 @@ def diff(x, order=1, dim=-1, voxel_size=1, side='c', bound='dct2', out=None):
         * 'c': central finite differences
         * 'f': forward finite differences
         * 'b': backward finite differences
-    bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'repeat', 'zero'}
+    bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'replicate', 'zero'}
         Boundary condition.
     out : tensor, optional
         Output placeholder
@@ -306,12 +308,14 @@ def div1d(x, order=1, dim=-1, voxel_size=1, side='c', bound='dct2', out=None):
         Dimension along which to compute finite differences.
     voxel_size : float
         Unit size used in the denominator of the gradient.
-    side : {'f', 'b'}, default='f'
+    side : {'c', 'f', 'b'}, default='c'
+        * 'c': central finite differences
         * 'f': forward finite differences
         * 'b': backward finite differences
-      [ * 'c': central finite differences ] => NotImplemented
     bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'replicate', 'zero'}
         Boundary condition.
+    out : tensor, optional
+        Output placeholder
 
     Returns
     -------
@@ -585,11 +589,11 @@ def div(x, order=1, dim=-1, voxel_size=1, side='f', bound='dct2', out=None):
         Dimension along which finite differences were computed.
     voxel_size : float or sequence[float], default=1
         Unit size used in the denominator of the gradient.
-    side : {'f', 'b'}, default='f'
+    side : {'c', 'f', 'b'}, default='f'
+        * 'c': central finite differences
         * 'f': forward finite differences
         * 'b': backward finite differences
-      [ * 'c': central finite differences ] => NotImplemented
-    bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'repeat', 'zero'}
+    bound : {'dct2', 'dct1', 'dst2', 'dst1', 'dft', 'replicate', 'zero'}
         Boundary condition.
     out : tensor, optional
         Output placeholder

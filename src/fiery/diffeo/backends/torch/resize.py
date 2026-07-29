@@ -8,11 +8,11 @@ def downsample(image, factor=None, shape=None, anchor='center'):
     ----------
     image : (B, C, *shape_in) tensor
     factor OR shape : int or list[int]
-    anchor : {'center', 'edge'} tensor
+    anchor : {'center', 'edge'}
 
     Returns
     -------
-    image : (B, C, *shape_out)
+    image : (B, C, *shape_out) tensor
 
     """
     if shape and factor:
@@ -69,7 +69,7 @@ def upsample(image, factor=None, shape=None, anchor='center'):
 
 
 def downsample_flow(flow, factor=None, shape=None, anchor='center'):
-    """Downsample a flow field  using centers or edges of the corner
+    """Downsample a flow field using centers or edges of the corner
     voxels as anchors.
 
     Parameters
@@ -108,7 +108,7 @@ def downsample_flow(flow, factor=None, shape=None, anchor='center'):
 
 
 def upsample_flow(flow, factor=None, shape=None, anchor='center'):
-    """Upsample a flow field  using centers or edges of the corner
+    """Upsample a flow field using centers or edges of the corner
     voxels as anchors.
 
     Parameters

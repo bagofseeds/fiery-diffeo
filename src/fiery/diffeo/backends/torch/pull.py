@@ -19,7 +19,7 @@ def pull(image, flow, bound='dct2', has_identity=False, **kwargs):
         Boundary conditions. PyTorch does not really support them,
         so "reflection" (which is equivalent to "dct2") is always used.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
@@ -64,8 +64,8 @@ def flow_to_torch(flow, shape, align_corners=True, has_identity=False):
     align_corners : bool, default=True
         Torch's grid mode
     has_identity : bool, default=False
-        If False, `flow` is contains relative displacement.
-        If False, `flow` contains absolute coordinates.
+        If False, `flow` contains a relative displacement.
+        If True, `flow` contains absolute coordinates.
 
     Returns
     -------
