@@ -1,4 +1,4 @@
-__all__ = ['Laplace', 'Helmoltz']
+__all__ = ['Laplace', 'Helmholtz']
 from fiery.diffeo.dft import FrequencyTransform
 from fiery.diffeo.metrics.base import Metric
 
@@ -104,7 +104,7 @@ class Laplace(Metric):
         return kernel
 
 
-class Helmoltz(Metric):
+class Helmholtz(Metric):
     """
     Positive semi-definite metric based on the Helmholtz operator.
 
@@ -159,7 +159,7 @@ class Helmoltz(Metric):
         shape = tuple(x.shape[-ndim - 1 : -1])
         kernel = self._greens_kernel.get(shape, None)
         if kernel is None:
-            kernel = greens.helmoltz(
+            kernel = greens.helmholtz(
                 shape,
                 self.alpha,
                 self.voxel_size,

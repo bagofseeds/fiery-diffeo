@@ -300,7 +300,7 @@ cache : bool or int
     Cache up to `n` kernels
 """
 
-Helmoltz(factor=1, alpha=1e-3, voxel_size=1, bound='circulant',
+Helmholtz(factor=1, alpha=1e-3, voxel_size=1, bound='circulant',
          learnable=False, cache=False): ...
 """
 Positive semi-definite metric based on the Helmholtz operator.

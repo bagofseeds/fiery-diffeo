@@ -49,7 +49,7 @@ def laplace(shape, voxel_size=1, dtype=None, device=None):
     return greens
 
 
-def helmoltz(shape, alpha=1e-3, voxel_size=1, dtype=None, device=None):
+def helmholtz(shape, alpha=1e-3, voxel_size=1, dtype=None, device=None):
     """Compute the Green's function of the Helmholtz operator
 
     The Helmholtz operator can be seen as a regularised version of the
@@ -128,6 +128,6 @@ def H01(x):
     try:
         from scipy.special import hankel1
     except ImportError:
-        raise ImportError('2D Helmoltz metrics require scipy') from None
+        raise ImportError('2D Helmholtz metrics require scipy') from None
     device = x.device
     return torch.as_tensor(hankel1(0, x.cpu().numpy()), device=device)
