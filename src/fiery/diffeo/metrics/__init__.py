@@ -12,7 +12,7 @@ Three families are available:
   sum of finite-difference energies (absolute, membrane, bending and
   linear-elastic);
 - [`Laplace`][fiery.diffeo.metrics.Laplace] and
-  [`Helmoltz`][fiery.diffeo.metrics.Helmoltz] use the analytical Green's
+  [`Helmholtz`][fiery.diffeo.metrics.Helmholtz] use the analytical Green's
   function of the corresponding differential operator;
 - [`Gaussian`][fiery.diffeo.metrics.Gaussian] uses a Gaussian filter as
   its Green's function.
