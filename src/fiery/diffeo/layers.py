@@ -1,24 +1,42 @@
-"""
+"""Diffeomorphic layers: exponentiation, composition and resampling.
+
+Every layer in this module follows the channel-first convention used by
+the rest of PyTorch: images are `(batch, C, *spatial)` tensors, and
+velocity, displacement and momentum fields are `(batch, D, *spatial)`
+tensors, where `D` is the number of spatial dimensions. (The functional
+API under `fiery.diffeo.flows`, `fiery.diffeo.svf` and
+`fiery.diffeo.shoot` uses the channel-last convention instead, and these
+layers transpose on the way in and out.)
+
 Boundary conditions
 ===================
 
-There is no common convention to name boundary conditions.
-Here's the list all possible aliases.
+There is no common convention for naming boundary conditions. The table
+below lists all the aliases understood by this package; the "Metric"
+column holds the names that the `bound` argument of these layers
+expects. The "Description" column sketches how a 1D signal `a b c d` is
+extended past its two ends.
 
-=========   ===========   =======================   =======================
-Fourier     SciPy         Metric                    Description
-=========   ===========   =======================   =======================
-dft         wrap          circular                  c  d | a b c d |  a  b
-dct2        reflect       neumann                   b  a | a b c d |  d  c
-dct1        mirror                                  c  b | a b c d |  c  b
-dst2                      dirichlet                -b -a | a b c d | -d -c
-dst1                                               -a  0 | a b c d |  0 -d
+```text
+Fourier     SciPy         Metric        Description
+---------   -----------   -----------   ----------------------
+dft         wrap          circulant      c  d | a b c d |  a  b
+dct2        reflect       neumann        b  a | a b c d |  d  c
+dct1        mirror                       c  b | a b c d |  c  b
+dst2                      dirichlet     -b -a | a b c d | -d -c
+dst1                                    -a  0 | a b c d |  0 -d
+```
 
 We further define a flow-specific "sliding" boundary condition, which
-uses a combination of dct2 and dst2:
-=============================   =============================
+combines dct2 and dst2: each component of the field uses dst2 along its
+own axis and dct2 along the other axes. Components are ordered like the
+spatial axes, so the "X component" below is the one that runs along the
+first (row) axis, and the "Y component" the one that runs along the
+second (column) axis.
+
+```text
 X component                     Y component
-=============================   =============================
+-----------------------------   -----------------------------
  -f -e   -e -f -g -h   -h -g     -f -e    e  f  g  h   -h -g
  -b -a   -a -b -c -d   -d -c     -b -a    a  b  c  d   -d -c
 -----------------------------   -----------------------------
@@ -29,6 +47,7 @@ X component                     Y component
 -----------------------------   -----------------------------
  -n -m   -m -n -o -p   -p -o     -n -m    m  n  o  p   -p -o
  -j -i   -i -j -k -l   -l -k     -j -i    i  j  k  l   -l -k
+```
 """
 
 from torch import nn
@@ -40,7 +59,7 @@ from fiery.diffeo.svf import bch, exp
 
 
 class Exp(nn.Module):
-    """Exponentiate a Stationary Velocity Field"""
+    """Exponentiate a stationary velocity field by scaling and squaring."""
 
     def __init__(
         self, bound='circulant', steps=8, anagrad=False, backend=None
@@ -56,11 +75,11 @@ class Exp(nn.Module):
             Use analytical gradients instead of autograd.
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
 
         Notes
         -----
-        The number of equivalent Euler integration steps is `2**steps`
+        The number of equivalent Euler integration steps is `2**steps`.
 
         Analytical gradients use less memory than autograd gradients,
         as they do not require storing intermediate time steps during
@@ -85,12 +104,13 @@ class Exp(nn.Module):
 
 class BCH(nn.Module):
     """
-    Compose two Stationary Velocity Fields using the BCH formula
+    Compose two stationary velocity fields using the BCH formula.
 
-    The Baker–Campbell–Hausdorff (BCH) allows computing z such that
-    exp(z) = exp(x) o exp(y).
+    The Baker-Campbell-Hausdorff (BCH) formula gives the velocity field
+    `z` such that `exp(z) = exp(x) o exp(y)`, as a series of nested Lie
+    brackets of `x` and `y`. The series is truncated at `order`.
 
-    https://en.wikipedia.org/wiki/BCH_formula
+    See: <https://en.wikipedia.org/wiki/BCH_formula>
     """
 
     def __init__(self, bound='circulant', order=2, backend=None):
@@ -99,11 +119,11 @@ class BCH(nn.Module):
         ----------
         bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
             Boundary conditions.
-        order : int
-            Maximum order used in the BCH series
+        order : {1, 2, 3, 4}
+            Maximum order used in the BCH series.
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.bound = bound
@@ -120,7 +140,7 @@ class BCH(nn.Module):
 
 class Shoot(nn.Module):
     """
-    Exponentiate an Initial Velocity using Geodesic Shooting
+    Exponentiate an initial velocity field by geodesic shooting.
 
     Returns the forward transform.
     """
@@ -132,16 +152,16 @@ class Shoot(nn.Module):
         Parameters
         ----------
         metric : Metric
-            A Riemannian metric
-        steps : int
+            A Riemannian metric.
+        steps : int, optional
             Number of Euler integration steps.
             If None, use an educated guess based on the magnitude of
             the initial velocity.
-        fast : int
+        fast : bool
             Use a faster but slightly less accurate integration scheme.
         backend : module
             Backend to use to implement pullback and pushforward.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.metric = metric
@@ -159,7 +179,7 @@ class Shoot(nn.Module):
 
 class ShootInv(nn.Module):
     """
-    Exponentiate an Initial Velocity using Geodesic Shooting
+    Exponentiate an initial velocity field by geodesic shooting.
 
     Returns the inverse transform.
     """
@@ -171,16 +191,16 @@ class ShootInv(nn.Module):
         Parameters
         ----------
         metric : Metric
-            A Riemannian metric
-        steps : int
+            A Riemannian metric.
+        steps : int, optional
             Number of Euler integration steps.
             If None, use an educated guess based on the magnitude of
             the initial velocity.
-        fast : int
+        fast : bool
             Use a faster but slightly less accurate integration scheme.
         backend : module
             Backend to use to implement pullback and pushforward.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.metric = metric
@@ -198,9 +218,9 @@ class ShootInv(nn.Module):
 
 class ShootBoth(nn.Module):
     """
-    Exponentiate an Initial Velocity using Geodesic Shooting
+    Exponentiate an initial velocity field by geodesic shooting.
 
-    Returns the forward and inverse transform.
+    Returns both the forward and the inverse transform.
     """
 
     def __init__(
@@ -210,16 +230,16 @@ class ShootBoth(nn.Module):
         Parameters
         ----------
         metric : Metric
-            A Riemannian metric
-        steps : int
+            A Riemannian metric.
+        steps : int, optional
             Number of Euler integration steps.
             If None, use an educated guess based on the magnitude of
             the initial velocity.
-        fast : int
+        fast : bool
             Use a faster but slightly less accurate integration scheme.
         backend : module
             Backend to use to implement pullback and pushforward.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.metric = metric
@@ -239,7 +259,7 @@ class ShootBoth(nn.Module):
 
 
 class Compose(nn.Module):
-    """Compose two displacement fields"""
+    """Compose two displacement fields."""
 
     def __init__(self, bound='circulant', backend=None):
         """
@@ -249,7 +269,7 @@ class Compose(nn.Module):
             Boundary conditions.
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.bound = bound
@@ -263,7 +283,7 @@ class Compose(nn.Module):
 
 
 class Pull(nn.Module):
-    """Warp an image using a displacement field"""
+    """Warp an image using a displacement field."""
 
     def __init__(self, bound='wrap', backend=None):
         """
@@ -272,10 +292,10 @@ class Pull(nn.Module):
         bound : [list of] {'wrap', 'reflect', 'mirror'}
             Boundary conditions.
             If warping a displacement field, can also be one of the
-            metrics bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
+            metric bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.bound = bound
@@ -288,7 +308,7 @@ class Pull(nn.Module):
 
 
 class Push(nn.Module):
-    """Splat an image using a displacement field"""
+    """Splat an image using a displacement field."""
 
     def __init__(self, bound='wrap', normalize=False, backend=None):
         """
@@ -297,13 +317,13 @@ class Push(nn.Module):
         bound : [list of] {'wrap', 'reflect', 'mirror'}
             Boundary conditions.
             If splatting a displacement field, can also be one of the
-            metrics bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
+            metric bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
         normalize : bool
-            Whether to divide the pushed values with the number of
-            pushed values (i.e., the "count").
+            Whether to divide the pushed values by the number of values
+            pushed onto each voxel (i.e., the result of `Count`).
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.bound = bound
@@ -321,7 +341,7 @@ class Push(nn.Module):
 
 
 class Count(nn.Module):
-    """Splat an image using a displacement field"""
+    """Splat an image of ones using a displacement field."""
 
     def __init__(self, bound='wrap', backend=None):
         """
@@ -330,10 +350,10 @@ class Count(nn.Module):
         bound : [list of] {'wrap', 'reflect', 'mirror'}
             Boundary conditions.
             If splatting a displacement field, can also be one of the
-            metrics bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
+            metric bounds: {'circulant', 'neumann', 'dirichlet', 'sliding'}
         backend : module
             Backend to use to implement resampling.
-            Must be one of the modules under `diffeo.backends`.
+            Must be one of the modules under `fiery.diffeo.backends`.
         """
         super().__init__()
         self.bound = bound

@@ -6,10 +6,28 @@ from torch import Tensor
 
 
 def ensure_list(x, size=None, crop=True, **kwargs):
-    """Ensure that an object is a list (of size at last dim)
-    If x is a list, nothing is done (no copy triggered).
+    """Ensure that an object is a list, of length `size` if given.
+
+    If `x` is already a list, nothing is done (no copy is triggered).
     If it is a tuple, it is converted into a list.
     Otherwise, it is placed inside a list.
+
+    Parameters
+    ----------
+    x : object
+        Input object.
+    size : int, optional
+        Target length. The list is padded (by repeating its last value,
+        or `default` if given) and, if `crop`, cropped to that length.
+    crop : bool, default=True
+        Crop the list if it is longer than `size`.
+    **kwargs : dict
+        May contain `default`, the value to pad with.
+
+    Returns
+    -------
+    x : list
+        Output list.
     """
     if not isinstance(x, (list, tuple, range, generator)):
         x = [x]
@@ -27,6 +45,7 @@ def make_vector(
     input, n=None, crop=True, *args, dtype=None, device=None, **kwargs
 ):
     """Ensure that the input is a (tensor) vector and pad/crop if necessary.
+
     Parameters
     ----------
     input : scalar or sequence or generator
@@ -41,7 +60,8 @@ def make_vector(
     dtype : torch.dtype, optional
         Output data type.
     device : torch.device, optional
-        Output device
+        Output device.
+
     Returns
     -------
     output : tensor
@@ -104,13 +124,18 @@ def _compare_versions(version1, mode, version2):
 
 def torch_version(mode, version):
     """Check torch version
+
     Parameters
     ----------
     mode : {'<', '<=', '>', '>='}
+        Comparison operator.
     version : tuple[int]
+        Version to compare the running torch version against.
+
     Returns
     -------
-    True if "torch.version <mode> version"
+    result : bool
+        True if `torch.__version__ <mode> version`.
     """
     current_version, *cuda_variant = torch.__version__.split('+')
     major, minor, patch, *_ = current_version.split('.')
@@ -165,28 +190,38 @@ else:
 
 def cartesian_grid(shape, **backend):
     """Wrapper for meshgrid(arange(...))
+
     Parameters
     ----------
     shape : list[int]
+        Spatial shape of the grid.
+    **backend : dict
+        Keyword arguments passed to `torch.arange`, typically `dtype`
+        and `device`.
+
     Returns
     -------
-    list[Tensor]
+    grid : list[Tensor]
+        One tensor of coordinates per dimension, each of shape `shape`.
     """
     return meshgrid_script_ij([torch.arange(s, **backend) for s in shape])
 
 
 def expand_shapes(*shapes, side='left'):
     """Expand input shapes according to broadcasting rules
+
     Parameters
     ----------
     *shapes : sequence[int]
         Input shapes
     side : {'left', 'right'}, default='left'
         Side to add singleton dimensions.
+
     Returns
     -------
     shape : tuple[int]
         Output shape
+
     Raises
     ------
     ValueError

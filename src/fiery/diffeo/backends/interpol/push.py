@@ -18,12 +18,13 @@ def push(image, flow, shape=None, bound='dct2', has_identity=False):
         Displacement field, in voxels.
     shape : list[int], optional
         Output shape
-    bound : {'dft', 'dct{1|2|3|4}', 'dst{1|2|3|4}'}, default='dct2'
+    bound : {'dft', 'dct[1|2|3|4]', 'dst[1|2|3|4]'}, default='dct2'
         Boundary conditions.
-        Can also be one for {'circulant', 'neumann', 'dirichlet', 'sliding'},
-        in which case the image is assumed to be a flow field.
+        Can also be one of the metric bounds
+        {'circulant', 'neumann', 'dirichlet', 'sliding'}, in which case
+        the image is assumed to be a flow field.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
@@ -71,18 +72,20 @@ def count(flow, shape=None, bound='dct2', has_identity=False):
         Displacement field, in voxels.
     shape : list[int], optional
         Output shape
-    bound : {'dft', 'dct{1|2|3|4}', 'dst{1|2|3|4}'}, default='dct2'
+    bound : {'dft', 'dct[1|2|3|4]', 'dst[1|2|3|4]'}, default='dct2'
         Boundary conditions.
-        Can also be one for {'circulant', 'neumann', 'dirichlet', 'sliding'},
-        in which case the count image may have D channels.
+        Can also be one of the metric bounds
+        {'circulant', 'neumann', 'dirichlet', 'sliding'}, in which case
+        the count image may have D channels.
     has_identity : bool, default=False
-        - If False, `flow` is contains relative displacement.
+        - If False, `flow` contains a relative displacement.
         - If True, `flow` contains absolute coordinates.
 
     Returns
     -------
     count : (..., *shape_out, 1|D) tensor
-        Count image
+        Count image. It has `D` channels under the 'sliding' boundary
+        condition, and a single channel otherwise.
 
     """
     if not has_identity:

@@ -8,11 +8,14 @@ from . import greens
 class Laplace(Metric):
     """
     Positive semi-definite metric based on the Laplace operator.
-    This is relatively similar to SPM's "membrane" energy, but relies on
-    the (ill-posed) analytical form of the Greens function.
 
-    https://en.wikipedia.org/wiki/Laplace%27s_equation
-    https://en.wikipedia.org/wiki/Green%27s_function
+    This is relatively similar to SPM's "membrane" energy, but relies on
+    the (ill-posed) analytical form of the Green's function.
+
+    See:
+
+    - <https://en.wikipedia.org/wiki/Laplace%27s_equation>
+    - <https://en.wikipedia.org/wiki/Green%27s_function>
     """
 
     def __init__(
@@ -27,15 +30,15 @@ class Laplace(Metric):
         Parameters
         ----------
         factor : float
-            Regularization factor (optionally: learnable)
-        voxel_size : list[float]
-            Voxel size
+            Regularization factor (optionally: learnable).
+        voxel_size : [list of] float
+            Voxel size.
         bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
-            Boundary conditions
+            Boundary conditions.
         learnable : bool
-            Make `factor` a learnable parameter
+            Make `factor` a learnable parameter.
         cache : bool or int
-            Cache up to `n` kernels
+            Cache up to `n` kernels.
         """
         super().__init__(factor, voxel_size, bound, learnable, cache)
         self._metric_kernel = {}
@@ -103,13 +106,16 @@ class Laplace(Metric):
 
 class Helmoltz(Metric):
     """
-    Positive semi-definite metric based on the Helmoltz operator.
+    Positive semi-definite metric based on the Helmholtz operator.
+
     This is relatively similar to SPM's mixture of "absolute" and
     "membrane" energies, but relies on the (ill-posed) analytical form
-    of the Greens function.
+    of the Green's function.
 
-    https://en.wikipedia.org/wiki/Helmholtz_equation
-    https://en.wikipedia.org/wiki/Green%27s_function
+    See:
+
+    - <https://en.wikipedia.org/wiki/Helmholtz_equation>
+    - <https://en.wikipedia.org/wiki/Green%27s_function>
     """
 
     def __init__(
@@ -125,18 +131,19 @@ class Helmoltz(Metric):
         Parameters
         ----------
         factor : float
-            Regularization factor (optionally: learnable)
+            Regularization factor (optionally: learnable).
         alpha : float
             Diagonal regularizer (cannot be learned).
-            It is the square of the eigenvalue in the Helmoltz equation.
-        voxel_size : list[float]
-            Voxel size
+            It is the square of the eigenvalue in the Helmholtz
+            equation.
+        voxel_size : [list of] float
+            Voxel size.
         bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
-            Boundary conditions
+            Boundary conditions.
         learnable : bool
-            Make `factor` a learnable parameter
+            Make `factor` a learnable parameter.
         cache : bool or int
-            Cache up to `n` kernels
+            Cache up to `n` kernels.
         """
         super().__init__(factor, voxel_size, bound, learnable, cache)
         self.alpha = alpha

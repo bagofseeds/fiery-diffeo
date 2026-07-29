@@ -14,12 +14,13 @@ from . import forward, kernels
 
 class Mixture(Metric):
     """
-    Positive semi-definite metric based on finite-difference regularisers.
+    Positive semi-definite metric based on finite-difference
+    regularisers.
 
-    Mixture of "absolute", "membrane", "bending" and "linear-elastic" energies.
-    Note that these quantities refer to what's penalised when computing the
-    inner product (v, Lv). The "membrane" energy is therefore closely related
-    to the "Laplacian" metric.
+    Mixture of "absolute", "membrane", "bending" and "linear-elastic"
+    energies. Note that these names refer to what is penalised when
+    computing the inner product `(v, Lv)`. The "membrane" energy is
+    therefore closely related to the "Laplacian" metric.
     """
 
     def __init__(
@@ -40,32 +41,35 @@ class Mixture(Metric):
         Parameters
         ----------
         absolute : float
-            Penalty on (squared) absolute values
-        membrane: float
-            Penalty on (squared) first derivatives
+            Penalty on (squared) absolute values.
+        membrane : float
+            Penalty on (squared) first derivatives.
         bending : float
-            Penalty on (squared) second derivatives
+            Penalty on (squared) second derivatives.
         lame_shears : float
-            Penalty on the (squared) symmetric component of the Jacobian
+            Penalty on the (squared) symmetric component of the
+            Jacobian.
         lame_div : float
-            Penalty on the trace of the Jacobian
+            Penalty on the trace of the Jacobian.
         factor : float
-            Global regularization factor (optionally: learnable)
-        voxel_size : list[float]
-            Voxel size
+            Global regularization factor (optionally: learnable).
+        voxel_size : [list of] float
+            Voxel size.
         bound : [list of] {'circulant', 'neumann', 'dirichlet', 'sliding'}
-            Boundary conditions
+            Boundary conditions.
         use_diff : bool
             Use finite differences to perform the forward pass.
             Otherwise, perform the convolution in Fourier space.
         learnable : bool or {'factor', 'components', 'factor+components'}
             Make `factor` a learnable parameter.
-            If 'components', the individual factors (absolute, membrane, etc)
-            are learned instead of the global factor.
-            `True` is equivalent to `factor`.
+            If `'components'`, the individual factors (absolute,
+            membrane, etc.) are learned instead of the global factor.
+            Individual components can also be named one by one, e.g.
+            `'membrane+bending'`.
+            `True` is equivalent to `'factor'`.
         cache : bool or int
-            Cache up to `n` kernels
-            This cannot be used when `learnable='components'`
+            Cache up to `n` kernels.
+            This cannot be used together with learnable components.
         """
         learnable_components = (
             isinstance(learnable, str) and 'components' in learnable
@@ -142,8 +146,26 @@ class Mixture(Metric):
         self.use_diff = use_diff
 
     def forward(self, x, factor=True):
-        # x: (..., *spatial, D) tensor
-        # -> (..., *spatial, D) tensor
+        """Apply the forward linear operator: `v -> Lv`.
+
+        Converts a velocity field into a momentum field. When
+        `use_diff` is True this is computed directly with finite
+        differences; otherwise it is computed as a convolution in
+        Fourier space.
+
+        Parameters
+        ----------
+        x : (..., *spatial, D) tensor
+            Input velocity field.
+        factor : bool, default=True
+            Whether to incorporate the global regularization factor.
+
+        Returns
+        -------
+        m : (..., *spatial, D) tensor
+            Output momentum field.
+
+        """
         if self.use_diff:
             return forward.mixture(
                 x,

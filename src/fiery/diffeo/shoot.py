@@ -18,21 +18,20 @@ def shoot(
     verbose=False,
     backend=interpol,
 ):
-    """Exponentiate a velocity field by geodesic shooting.
+    """Exponentiate an initial velocity field by geodesic shooting.
 
-    Notes
-    -----
-    In our convention, the initial velocity is defined in the space
-    of the moving image. It is the opposite of the LDDMM convention,
-    which defines the initial velocity in the space of the fixed image.
-    Our phi is therefore LDDMM's iphi, and vice versa.
+    The initial velocity is converted to a momentum field by the metric
+    (`u = Lv`); the momentum is then transported along the flow it
+    generates (the EPDiff equation), and the velocity is recovered at
+    each time step by convolution with the Green's function of the
+    metric (`v = Ku`).
 
     Parameters
     ----------
     vel : (..., *spatial, dim) tensor
         Initial velocity in moving space.
     metric : Metric
-        Riemannian metric
+        Riemannian metric.
     steps : int, optional
         Number of integration steps.
         If None, use an educated guess based on the magnitude of `vel`.
@@ -40,16 +39,28 @@ def shoot(
         If True, use a faster integration scheme, which may induce
         some numerical error (the energy is not exactly preserved
         across time). Else, use the slower but more precise scheme.
+    verbose : bool, default=False
+        Print the (per-voxel) kinetic energy at each time step. It
+        should stay constant along an exact geodesic.
+    backend : module
+        Backend used to implement pullback and pushforward.
+        Must be one of the modules under `fiery.diffeo.backends`.
 
     Returns
     -------
-    flow : (..., *spatial, dim) tensor
-        Transformation from fixed to moving space.
+    disp : (..., *spatial, dim) tensor
+        Displacement field from fixed to moving space.
         (It is used to warp a moving image to a fixed one).
-
-    iflow : (..., *spatial, dim) tensor, if return_inverse
-        Inverse transformation, from fixed to moving space.
+    idisp : (..., *spatial, dim) tensor
+        Inverse displacement field, from moving to fixed space.
         (It is used to warp a fixed image to a moving one).
+
+    Notes
+    -----
+    In our convention, the initial velocity is defined in the space
+    of the moving image. It is the opposite of the LDDMM convention,
+    which defines the initial velocity in the space of the fixed image.
+    Our phi is therefore LDDMM's iphi, and vice versa.
 
     """
     # Authors

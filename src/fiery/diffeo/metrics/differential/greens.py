@@ -6,7 +6,7 @@ from fiery.diffeo.utils import cartesian_grid, make_vector
 
 
 def laplace(shape, voxel_size=1, dtype=None, device=None):
-    """Compute the Greens function of the Laplace operator
+    """Compute the Green's function of the Laplace operator
 
     Parameters
     ----------
@@ -50,9 +50,9 @@ def laplace(shape, voxel_size=1, dtype=None, device=None):
 
 
 def helmoltz(shape, alpha=1e-3, voxel_size=1, dtype=None, device=None):
-    """Compute the Greens function of the Helmoltz operator
+    """Compute the Green's function of the Helmholtz operator
 
-    The Helmoltz operator can be seen as a regularised version of the
+    The Helmholtz operator can be seen as a regularised version of the
     Laplace operator
 
     Parameters
@@ -110,8 +110,9 @@ def helmoltz(shape, alpha=1e-3, voxel_size=1, dtype=None, device=None):
 
 def h02(x):
     """
-    Zero-th order spherical Hankel function of the second kind
-    https://en.wikipedia.org/wiki/Bessel_function
+    Zeroth-order spherical Hankel function of the second kind.
+
+    See: <https://en.wikipedia.org/wiki/Bessel_function>
     """
     j0 = x.sinc()  # zeroth spherical Bessel function
     y0 = x.cos().div_(x)  # conjugate of the zeroth spherical Neumann function
@@ -120,8 +121,9 @@ def h02(x):
 
 def H01(x):
     """
-    Zero-th order Hankel function of the first kind
-    https://en.wikipedia.org/wiki/Bessel_function
+    Zeroth-order Hankel function of the first kind.
+
+    See: <https://en.wikipedia.org/wiki/Bessel_function>
     """
     try:
         from scipy.special import hankel1

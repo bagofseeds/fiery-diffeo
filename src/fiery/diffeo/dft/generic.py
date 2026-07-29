@@ -22,7 +22,7 @@ def dtn(
     ----------
     x : torch.tensor
         The input array.
-    type : [list of] {"dft", "dct{1234}", "dst{1234}"}, optional
+    type : [list of] {"dft", "dct[1|2|3|4]", "dst[1|2|3|4]"}, optional
         Type of transform, per dimension. Default is "dft".
     inverse : bool, optional
         Apply inverse transform
@@ -75,11 +75,11 @@ def kerdtn(
     kernel : ([D], D, *shape) tensor
         Input kernel.
     ndim : int
-        Number of spatial dimensions
+        Number of spatial dimensions.
     sym : [list of] bool
         Whether to apply a symmetric transform (DCT/DST), per dimension.
     inverse : bool
-        Whether to apply the inverse transform
+        Whether to apply the inverse transform.
 
     Returns
     -------
@@ -126,9 +126,9 @@ def dtshift(
     kernel : ([D], D, *shape) tensor
         Input kernel.
         If it has a single batch dimension, it is a diagonal kernel.
-        Otherwise, it is a full kernel. If `sym`, diagonal element are
-        assumed to have an odd symmetry (DCT-I) and off-diagonal elements
-        are assumed to have an odd antisymmetry (DST-I).
+        Otherwise, it is a full kernel. If `sym`, diagonal elements are
+        assumed to have an even symmetry (DCT-I) and off-diagonal
+        elements are assumed to have an odd symmetry (DST-I).
     ndim : int
         Number of spatial dimensions.
     sym : [list of] bool

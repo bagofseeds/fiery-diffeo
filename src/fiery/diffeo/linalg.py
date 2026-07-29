@@ -1,17 +1,19 @@
 """
-Linear Algebra utilities.
+Linear algebra utilities.
 
-I found that some torch functions (e.g., `inverse()` or `det()`) where
-not so efficient when applied to large batches of small matrices,
-especially on the GPU (this is not so true on the CPU). I reimplemented
-them using torchscript for 2x2 and 3x3 matrices, and they are much
-faster:
-    - batchdet
-    - batchinv
-    - batchmatvec
-I used to have a `batchmatmul` too, but its speed was not always better
-than `torch.matmul()` (it depended a lot on the striding layout),
-so I removed it.
+Some torch functions (e.g. `inverse()` or `det()`) turned out not to be
+very efficient when applied to large batches of small matrices,
+especially on the GPU (this is much less true on the CPU). They are
+reimplemented here with TorchScript, for 2x2 and 3x3 matrices only, and
+are much faster:
+
+- `batchdet`
+- `batchinv`
+- `batchmatvec`
+
+There used to be a `batchmatmul` too, but its speed was not consistently
+better than `torch.matmul()` (it depended a lot on the striding layout),
+so it was removed.
 """
 
 import torch
@@ -189,7 +191,7 @@ def jhj3(jac, hess):
 
 
 def jhj(jac, hess):
-    """J*H*J', where H is symmetric and stored sparse"""
+    """Compute `J*H*J'`, where `H` is symmetric and stored sparsely."""
 
     # Matlab symbolic toolbox
     #
