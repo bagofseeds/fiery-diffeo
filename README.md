@@ -1,14 +1,14 @@
 # fiery-diffeo
 Scaling-and-squaring and Geodesic Shooting layers in PyTorch
 
-`fiery-diffeo` is a [`fiery`](https://github.com/bagofseeds/fiery) bag: it
+`fiery-diffeo` is a [`fiery`](https://bagofseeds.github.io/fiery/) bag: it
 installs on its own and imports as `fiery.diffeo`.
 
 ## Getting started
 
 This package requires `pytorch >= 1.8`,
-[`fiery-interpol`](https://github.com/bagofseeds/fiery-interpol) and
-[`fiery-bounds`](https://github.com/bagofseeds/fiery-bounds).
+[`fiery-interpol`](https://bagofseeds.github.io/fiery-interpol/) and
+[`fiery-bounds`](https://bagofseeds.github.io/fiery-bounds/).
 We require this pytorch version so that complex values and the modern
 `torch.fft` module are supported. To install with pip, simply do:
 ```shell
@@ -17,7 +17,7 @@ pip install fiery-diffeo
 
 The DCT/DST boundary modes (which allow using Neumann or Dirichlet boundary
 conditions) work out of the box: they are provided by
-[`fiery-bounds`](https://github.com/bagofseeds/fiery-bounds) using
+[`fiery-bounds`](https://bagofseeds.github.io/fiery-bounds/) using
 `torch.fft`, on both CPU and GPU, with no extra dependency.
 
 Only the 2D Helmholtz metric additionally requires `scipy` (for the
@@ -332,7 +332,7 @@ operations:
   approximate implementation of splatting. It should be fast, but also
   quite inaccurate.
 - `interpol`: This backend uses the package
-  [`fiery-interpol`](https://github.com/bagofseeds/fiery-interpol), which
+  [`fiery-interpol`](https://bagofseeds.github.io/fiery-interpol/), which
   implements all the necessary operators using TorchScript. It is not the
   fastest but all operators and boundary conditions should be consistent.
   **This is the default backend.**
